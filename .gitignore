@@ -1,0 +1,20 @@
+# secrets and local config
+.env
+
+# data (public dataset; download it yourself, see README)
+data/raw/*
+!data/raw/.gitkeep
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# power bi temp files
+*.pbi*.tmp

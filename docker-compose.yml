@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:15
+    container_name: olist-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-olist}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-olist}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - olist_pgdata:/var/lib/postgresql/data
+
+volumes:
+  olist_pgdata:
