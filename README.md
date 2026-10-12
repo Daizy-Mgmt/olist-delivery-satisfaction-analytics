@@ -110,12 +110,13 @@ python scripts/run_analysis_queries.py
 
 ## 👤 About the Author: Daisy Phukan
 
-* **Current Role:** Technical Project Manager (Promoted from Trainee) — India Business Development at **Agile Robots SE** (Bengaluru, India).
-* **Target Roles:** **Business Analyst (BA), Business Intelligence (BI) Analyst, Data Analyst, or Commercial Operations Analyst** (Robotics, Industrial Tech, SaaS, Marketplace).
+* **Current Role:** Trainee ➔ Technical Project Manager (India Business Development) at **Agile Robots SE** (Bengaluru, India) — leading GTM strategy, Franka Robotics pricing & ROI calculators (`€0.28M ➔ €6M+` pipeline, `€2M+` achieved revenue), 30+ CXO/government/research stakeholder initiatives, and Power BI / Excel / HubSpot / Jira KPI systems (`~40%` coordination efficiency gain).
+* **Prior Experience:** **NoBroker** (*Client Advisor* — `42+` monthly consultations, `+25%` lead conversion efficiency, `₹1.25L+` service revenue in 2 months) · **IIIT Guwahati** (*Research Intern* — ESP32, MQTT & Raspberry Pi real-time IoT telemetry & simulation validation).
+* **Education & Honors:** **B.Tech in Mechanical Engineering**, Guru Ghasidas Vishwavidyalaya (Central University), Bilaspur (`CGPA: 7.0/10`) · **AICTE Pragati Scholarship (`₹50,000/yr`) & JNVST Scholar** · **Student Placement Coordinator (`+20%` company invitations YoY)** · **Microsoft PL-300 Candidate**.
 * **Core Competencies:**
-  * **Power BI & BI:** Power BI Desktop & Service *(PL-300 Candidate)*, Advanced DAX (`CALCULATE`, `DIVIDE`, Time Intelligence), Power Query (M), Star Schema Modeling, KPI Scorecards, SQL-to-BI Reconciliation.
-  * **Business Analysis (BA):** Requirements Elicitation (30+ CXO/Enterprise Stakeholders), BRD/FRD & User Stories, UAT, Process Mapping, Pricing & Customer ROI Modeling, Financial & GTM Modeling.
-  * **Technical Project Management (TPM):** Agile/Scrum Delivery, Sprint Planning, RAID & Risk Registers, SLA Governance, Cross-Functional Engineering Alignment, Jira, Confluence, HubSpot CRM.
-  * **Data & Quantitative Analytics:** PostgreSQL (CTEs, Window Functions), Advanced Excel (PivotTables, XLOOKUP, What-If Analysis), Python (`pandas`, `Plotly`, `Streamlit`), Hypothesis Testing.
+  * **BI & Visualization:** Power BI Desktop & Service *(PL-300 Candidate)*, Tableau, Advanced DAX (`CALCULATE`, `DIVIDE`, Time Intelligence), Power Query (M), Star Schema Modeling, SQL-to-BI Reconciliation.
+  * **Business Analysis (BA) & Commercial Strategy:** Requirements Elicitation (30+ CXO/Enterprise Stakeholders), BRD/FRD & Agile User Stories, Gherkin UAT, Process Mapping, GTM Strategy, Pricing & Customer ROI Modeling.
+  * **Project Management (TPM):** Agile, Scrum, Lean Six Sigma, Product Ownership, Sprint Planning, Risk Management & RAID Registers, SLA Governance, Jira, Confluence, Notion, HubSpot CRM, Google Workspace.
+  * **Data Science, SQL & Engineering:** PostgreSQL (CTEs, Window Functions), Advanced Excel (PivotTables, XLOOKUP, What-If Modeling), Python (`Pandas`, `NumPy`, `Scikit-learn`, `TensorFlow`, `OpenCV`, `Plotly`, `Matplotlib`, `Streamlit`), Statistical Hypothesis Testing ($F$-test, $t$-test), Docker, AWS, C++, ROS 2.
 
-📬 **Connect:** [daisyphukan.work@gmail.com](mailto:daisyphukan.work@gmail.com) · [LinkedIn Profile](https://linkedin.com/in/daisy-phukan-a401a4228) · [GitHub Profile](https://github.com/Daizy-Mgmt)
+📬 **Connect:** [daisyphukan.work@gmail.com](mailto:daisyphukan.work@gmail.com) · [LinkedIn Profile](https://linkedin.com/in/daisy-phukan-a401a4228) · [GitHub Profile](https://github.com/Daizy-Mgmt) · [Portfolio Website](https://daizy-mgmt.github.io/Daizy-Mgmt/)
