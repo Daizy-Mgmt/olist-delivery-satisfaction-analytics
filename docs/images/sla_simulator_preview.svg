@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="100%" height="100%">
+<defs>
+  <style>
+    .font { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; }
+    .card { fill: #ffffff; stroke: #e2e8f0; stroke-width: 1.2; rx: 10; }
+  </style>
+</defs>
+<rect width="1200" height="440" fill="#f8fafc" rx="12"/>
+<rect x="20" y="16" width="1160" height="46" fill="#1e293b" rx="8"/>
+<text x="38" y="44" class="font" font-size="14.5" font-weight="800" fill="#ffffff">🎛️ MODULE 4: INTERACTIVE SLA POLICY &amp; COMMERCIAL ROI SENSITIVITY SIMULATOR (DECISION ENGINE)</text>
+<text x="1162" y="44" text-anchor="end" class="font" font-size="11" font-weight="700" fill="#93c5fd">Deal-Desk &amp; Ops Breakeven Model</text>
+
+<!-- Left Column: Interactive Sliders Mockup -->
+<rect x="20" y="74" width="360" height="348" class="card"/>
+<text x="38" y="100" class="font" font-size="13" font-weight="700" fill="#0f172a">⚙️ Policy Levers &amp; Unit Economics</text>
+<text x="38" y="116" class="font" font-size="10" fill="#64748b">Live sensitivity controls in Streamlit app.py</text>
+
+<text x="38" y="146" class="font" font-size="10.5" font-weight="600" fill="#334155">1. Seller Late-Rate Enforcement Cutoff: 10.0%</text>
+<rect x="38" y="154" width="320" height="6" fill="#e2e8f0" rx="3"/><rect x="38" y="154" width="140" height="6" fill="#2563eb" rx="3"/><circle cx="178" cy="157" r="7" fill="#2563eb"/>
+
+<text x="38" y="196" class="font" font-size="10.5" font-weight="600" fill="#334155">2. Flagged Seller 3PL Rehabilitation Rate: 75%</text>
+<rect x="38" y="204" width="320" height="6" fill="#e2e8f0" rx="3"/><rect x="38" y="204" width="220" height="6" fill="#2563eb" rx="3"/><circle cx="258" cy="207" r="7" fill="#2563eb"/>
+
+<text x="38" y="246" class="font" font-size="10.5" font-weight="600" fill="#334155">3. Northern Route EDD Buffer Delay Reduction: 25%</text>
+<rect x="38" y="254" width="320" height="6" fill="#e2e8f0" rx="3"/><rect x="38" y="254" width="160" height="6" fill="#2563eb" rx="3"/><circle cx="198" cy="257" r="7" fill="#2563eb"/>
+
+<text x="38" y="296" class="font" font-size="10.5" font-weight="600" fill="#334155">4. CS &amp; Apology Voucher Cost / Late Order: $15.00</text>
+<rect x="38" y="304" width="320" height="6" fill="#e2e8f0" rx="3"/><rect x="38" y="304" width="150" height="6" fill="#2563eb" rx="3"/><circle cx="188" cy="307" r="7" fill="#2563eb"/>
+
+<text x="38" y="346" class="font" font-size="10.5" font-weight="600" fill="#334155">5. Platform Commission Take-Rate: 12.0%</text>
+<rect x="38" y="354" width="320" height="6" fill="#e2e8f0" rx="3"/><rect x="38" y="354" width="110" height="6" fill="#2563eb" rx="3"/><circle cx="148" cy="357" r="7" fill="#2563eb"/>
+
+<rect x="38" y="378" width="320" height="30" fill="#eff6ff" stroke="#bfdbfe" rx="6"/>
+<text x="198" y="397" text-anchor="middle" class="font" font-size="10.5" font-weight="700" fill="#1d4ed8">📥 1-Click CSV Export: Flagged Seller Worklist</text>
+
+<!-- Right Column: Simulated KPI Cards & P&L Waterfall Bridge -->
+<rect x="396" y="74" width="186" height="76" class="card"/><rect x="396" y="74" width="186" height="4" fill="#d97706" rx="2"/>
+<text x="410" y="94" class="font" font-size="9.5" font-weight="700" fill="#64748b">SELLERS FLAGGED</text>
+<text x="410" y="120" class="font" font-size="21" font-weight="800" fill="#0f172a">97 / 682</text>
+<text x="410" y="139" class="font" font-size="10" font-weight="600" fill="#d97706">2,641 Late Items Targeted</text>
+
+<rect x="594" y="74" width="186" height="76" class="card"/><rect x="594" y="74" width="186" height="4" fill="#059669" rx="2"/>
+<text x="608" y="94" class="font" font-size="9.5" font-weight="700" fill="#64748b">PROJECTED ON-TIME SLA</text>
+<text x="608" y="120" class="font" font-size="21" font-weight="800" fill="#0f172a">96.08%</text>
+<text x="608" y="139" class="font" font-size="10" font-weight="600" fill="#059669">+2.85% SLA Lift (Exceeds 95%)</text>
+
+<rect x="792" y="74" width="186" height="76" class="card"/><rect x="792" y="74" width="186" height="4" fill="#059669" rx="2"/>
+<text x="806" y="94" class="font" font-size="9.5" font-weight="700" fill="#64748b">1–2★ REVIEWS PREVENTED</text>
+<text x="806" y="120" class="font" font-size="21" font-weight="800" fill="#0f172a">1,464</text>
+<text x="806" y="139" class="font" font-size="10" font-weight="600" fill="#059669">2,747 Late Orders Avoided</text>
+
+<rect x="990" y="74" width="190" height="76" class="card"/><rect x="990" y="74" width="190" height="4" fill="#2563eb" rx="2"/>
+<text x="1004" y="94" class="font" font-size="9.5" font-weight="700" fill="#64748b">NET PLATFORM P&amp;L IMPACT</text>
+<text x="1004" y="120" class="font" font-size="21" font-weight="800" fill="#0f172a">+$36,840</text>
+<text x="1004" y="139" class="font" font-size="10" font-weight="600" fill="#2563eb">Net of Churned Seller Risk</text>
+
+<!-- Waterfall Chart Card -->
+<rect x="396" y="162" width="784" height="260" class="card"/>
+<text x="414" y="186" class="font" font-size="13" font-weight="700" fill="#0f172a">Commercial P&amp;L Sensitivity Bridge: Defect Elimination Gains vs. Seller Churn Exposure</text>
+<text x="414" y="201" class="font" font-size="10" fill="#64748b">Simulated Contribution Margin Bridge ($ USD) | Accounts for 3.12% Repeat Base-Rate &amp; 60% Buyer Substitution</text>
+<line x1="430" y1="380" x2="1150" y2="380" stroke="#cbd5e1" stroke-width="1"/>
+
+<!-- Waterfall Bars -->
+<rect x="465" y="265" width="110" height="115" fill="#059669" rx="4"/>
+<text x="520" y="257" text-anchor="middle" class="font" font-size="10.5" font-weight="700" fill="#059669">+$41,205</text>
+<text x="520" y="398" text-anchor="middle" class="font" font-size="9.5" fill="#334155">1. Saved CS &amp; Voucher Cost</text>
+
+<line x1="575" y1="265" x2="645" y2="265" stroke="#94a3b8" stroke-dasharray="3,3"/>
+<rect x="645" y="210" width="110" height="55" fill="#059669" rx="4"/>
+<text x="700" y="202" text-anchor="middle" class="font" font-size="10.5" font-weight="700" fill="#059669">+$20,760</text>
+<text x="700" y="398" text-anchor="middle" class="font" font-size="9.5" fill="#334155">2. Protected Rating &amp; Repeat Margin</text>
+
+<line x1="755" y1="210" x2="825" y2="210" stroke="#94a3b8" stroke-dasharray="3,3"/>
+<rect x="825" y="210" width="110" height="68" fill="#dc2626" rx="4"/>
+<text x="880" y="292" text-anchor="middle" class="font" font-size="10.5" font-weight="700" fill="#dc2626">-$25,125</text>
+<text x="880" y="398" text-anchor="middle" class="font" font-size="9.5" fill="#334155">3. Churned Seller Take-Rate Risk</text>
+
+<line x1="935" y1="278" x2="1005" y2="278" stroke="#94a3b8" stroke-dasharray="3,3"/>
+<rect x="1005" y="278" width="110" height="102" fill="#2563eb" rx="4"/>
+<text x="1060" y="270" text-anchor="middle" class="font" font-size="11" font-weight="800" fill="#2563eb">+$36,840 Net</text>
+<text x="1060" y="398" text-anchor="middle" class="font" font-size="9.5" font-weight="700" fill="#0f172a">4. Net Platform P&amp;L Gain</text>
+</svg>

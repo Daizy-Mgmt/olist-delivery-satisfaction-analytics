@@ -25,11 +25,11 @@ This audit addresses the core business question:
 2. **Extreme Bottleneck Concentration (Pareto Principle):**  
    Late deliveries are not distributed evenly across the marketplace. **10% of active sellers account for 52.5% of all late delivery items**. Sellers in Quintile 5 (the worst 20%) suffer an average lateness rate of **24.8%**, compared to only 0.8% in Quintile 1.
 
-3. **First-Purchase Delivery Delays Cut Repeat Propensity by 44%:**  
-   Customers whose very first order arrived on time demonstrated a **3.40%** repeat purchase rate. Customers whose initial order arrived late showed a repeat rate of only **1.82%**—representing a **~44% relative reduction** in customer acquisition return-on-investment (ROI).
+3. **First-Purchase Delivery Delays & Cohort Base-Rate Nuance:**  
+   Customers whose very first order arrived on time demonstrated a **3.40%** repeat purchase rate, whereas customers delayed 1–7 days dropped to **2.63%–2.64%** (a **22.6% relative reduction**). Crucially, because Olist's overall repeat purchase baseline is structurally **3.12%** (`96.88%` one-time buyers)—and `Not delivered` orders show a **4.68%** re-order rate driven by immediate replacement orders after cancellation—the primary commercial damage of severe delays is not repeat LTV loss alone, but the **79.3% 1–2★ review spike** that suppresses product conversion and inflates customer support costs.
 
 4. **Regional Transit Disparities:**  
-   Orders shipped to Southeastern hubs (São Paulo, Rio de Janeiro, Minas Gerais) average 8–11 transit days with >92% on-time performance. Conversely, remote Northern and Northeastern states (Maranhão, Ceará, Bahia, Pará) average **19–24 transit days**, with Maranhão (MA) dropping to an on-time rate of only **82.6%**.
+   Orders shipped to Southeastern/Southern hubs (São Paulo, Paraná, Minas Gerais) average 8.7–11.9 transit days with >95.4% on-time performance. Conversely, remote Northern and Northeastern states (Maranhão, Ceará, Bahia, Pará) average **19.3–23.7 transit days**, with Maranhão (MA) dropping to an on-time rate of only **82.57%**.
 
 ---
 
