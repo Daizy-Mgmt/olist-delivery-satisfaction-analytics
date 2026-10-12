@@ -123,8 +123,13 @@ streamlit run app.py
 
 ## 👤 About the Author: Daisy Phukan
 
-* **Current Role:** Technical Project Manager (Promoted from Trainee) at Agile Robots SE (Bengaluru, India).
-* **Target Role:** Associate / Junior **Business Analyst, Data Analyst, or Commercial Operations Analyst** (Robotics, Industrial Tech, SaaS, Marketplace).
-* **Why this profile stands out:** Combines hands-on technical analytics (SQL CTEs, dimensional modeling, Power BI DAX, Python) with real-world project management and business execution rigor.
+* **Current Role:** Technical Project Manager (Promoted from Trainee) — India Business Development at **Agile Robots SE** (Bengaluru, India).
+* **Target Roles:** **Business Analyst (BA), Business Intelligence (BI) Analyst, Data Analyst, or Commercial Operations Analyst** (Robotics, Industrial Tech, SaaS, Marketplace).
+* **Core Competencies:**
+  * **Power BI & BI:** Power BI Desktop & Service (PL-300 Candidate), Advanced DAX (`CALCULATE`, `DIVIDE`, Time Intelligence), Power Query (M), Star Schema Modeling, KPI Scorecards, SQL-to-BI Reconciliation.
+  * **Business Analysis (BA):** Requirements Elicitation (30+ CXO/Enterprise Stakeholders), BRD/FRD & User Stories, UAT, Process Mapping, Pricing & Customer ROI Modeling, Financial & GTM Modeling.
+  * **Technical Project Management (TPM):** Agile/Scrum Delivery, Sprint Planning, RAID & Risk Registers, SLA Governance, Cross-Functional Engineering Alignment, Jira, Confluence, HubSpot CRM.
+  * **Data & Quantitative Analytics:** PostgreSQL (CTEs, Window Functions), Advanced Excel (PivotTables, XLOOKUP, What-If Analysis), Python (`pandas`, `Plotly`, `Streamlit`), Hypothesis Testing.
 
-📬 **Connect:** [LinkedIn Profile](https://linkedin.com/in/daisy-phukan-a401a4228) · [GitHub Profile](https://github.com/Daizy-Mgmt)
+📬 **Connect:** [daisyphukan.work@gmail.com](mailto:daisyphukan.work@gmail.com) · [LinkedIn Profile](https://linkedin.com/in/daisy-phukan-a401a4228) · [GitHub Profile](https://github.com/Daizy-Mgmt)
+
