@@ -1,69 +1,63 @@
-# Olist Delivery Performance & Customer Satisfaction Analytics
+# 📦 Olist E-Commerce: Delivery SLA Analytics & Customer Retention Strategy
 
-![status](https://img.shields.io/badge/status-completed-success)
-![db](https://img.shields.io/badge/PostgreSQL-15-blue)
-![bi](https://img.shields.io/badge/Power%20BI-Star%20Schema%20%2B%20DAX-yellow)
-![app](https://img.shields.io/badge/Streamlit-Live%20Web%20Dashboard-red)
+[![Status](https://img.shields.io/badge/Project%20Status-Completed-success?style=for-the-badge&logo=checkmarx)](https://github.com/Daizy-Mgmt/olist-delivery-satisfaction-analytics)
+[![Live App](https://img.shields.io/badge/Live%20Dashboard-Streamlit%20Cloud-FF4B4B?style=for-the-badge&logo=streamlit)](https://daisy-olist-analytics.streamlit.app)
+[![Power BI](https://img.shields.io/badge/Power%20BI-Star%20Schema%20%2B%20DAX-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](powerbi/dax_measures.md)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%20Docker-4169E1?style=for-the-badge&logo=postgresql)](sql/)
 
-> **Live Interactive Dashboard:** [Explore Live Web App](https://daisy-olist-analytics.streamlit.app) *(or run locally with `streamlit run app.py`)*  
-> **Executive Memo:** [`docs/memo.md`](docs/memo.md)  
-> **Reconciliation Audit:** [`docs/reconciliation.md`](docs/reconciliation.md)
-
----
-
-## Business Question
-
-How much do late deliveries cost an e-commerce marketplace in **customer satisfaction and repeat business**, and which **sellers, categories, and geographic corridors** drive them?
-
-Framed as an operational decision for a marketplace operations and logistics leadership team: *Where should leadership intervene first to maximize ROI and protect customer lifetime value?*
+> 🚀 **Explore the Live Interactive Dashboard:** [daisy-olist-analytics.streamlit.app](https://daisy-olist-analytics.streamlit.app)  
+> 📄 **Executive Strategy Memo:** [`docs/memo.md`](docs/memo.md)  
+> 📊 **Power BI Build Blueprint:** [`powerbi/POWERBI_BUILD_GUIDE.md`](powerbi/POWERBI_BUILD_GUIDE.md)  
+> 📐 **10-Measure DAX Library:** [`powerbi/dax_measures.md`](powerbi/dax_measures.md)  
+> 🔍 **SQL & Financial Reconciliation:** [`docs/reconciliation.md`](docs/reconciliation.md)
 
 ---
 
-## Tools & Architecture Stack
+## 🧭 Executive Summary (For Recruiters & Hiring Managers)
 
-* **Database Engine:** PostgreSQL 15 (Docker)
-* **Data Modeling:** Star Schema Dimensional Marts (`mart` schema)
-* **Analytics & Querying:** PostgreSQL SQL (CTEs, Window Functions `LAG`, `RANK`, `NTILE`, Percentiles `PERCENTILE_CONT`)
-* **Business Intelligence:** Microsoft Power BI Desktop (10 production DAX measures in dedicated `_Measures` table)
-* **Web Deployment:** Streamlit & Plotly interactive web application
+In high-growth e-commerce marketplaces, **fulfillment reliability directly dictates customer lifetime value (LTV)**. While marketing teams spend heavily acquiring new buyers, operational friction and delayed shipments quietly erode retention.
 
----
+This project analyzes **99,441 Brazilian marketplace orders ($13.59M GMV)** across 2016–2018 to answer a core operational challenge:  
+**"How severely do delivery delays damage customer satisfaction, and which bottleneck sellers and regional corridors drive them?"**
 
-## Headline Findings
-
-| # | Empirical Finding | Evidence Query |
-|---|-------------------|----------------|
-| **1** | **The 8-Day Satisfaction Cliff:** On-time orders average **4.29 / 5.0 ★** with only 9.3% low scores. Delays of 8+ days collapse ratings to **1.70 ★**, with **79.3% of customers leaving 1–2 star negative reviews**. | [`sql/analysis/03_delay_vs_review.sql`](sql/analysis/03_delay_vs_review.sql) |
-| **2** | **Extreme Pareto Concentration:** Just **10% of active sellers account for 52.5% of all late delivered items** across the entire marketplace. Quintile 5 sellers average a 24.8% late rate and 3.65 review score. | [`sql/analysis/05_seller_scorecard.sql`](sql/analysis/05_seller_scorecard.sql) |
-| **3** | **Regional Delivery Disparities:** Southeastern hubs (SP, MG, PR) average 8–11 transit days with >92% on-time performance. Remote Northern/Northeastern states (MA, CE, PA, BA) average **19–24 days**, with Maranhão (MA) dropping to **82.6% on-time**. | [`sql/analysis/04_state_delay_hotspots.sql`](sql/analysis/04_state_delay_hotspots.sql) |
-| **4** | **First-Order Churn Cliff:** Customers experiencing a delivery delay on their initial order exhibit a repeat purchase rate of only **1.82%**, compared to **3.40%** for on-time buyers—representing a **~44% relative reduction** in repeat buyer retention. | [`sql/analysis/07_repeat_purchase_cohorts.sql`](sql/analysis/07_repeat_purchase_cohorts.sql) |
+### 💡 The 4 Big Business Discoveries (TL;DR):
+1. **The 8-Day Satisfaction Cliff:** Minor delays (1–3 days) cause a mild rating drop (4.29 ★ ➔ 3.29 ★). However, breaches exceeding **8 days** trigger total customer dissatisfaction: **79.3% of orders receive 1- or 2-star reviews**, collapsing average ratings to **1.70 / 5.0 ★**.
+2. **Extreme Bottleneck Concentration (Pareto Rule):** Late orders are not evenly distributed. **10% of active sellers drive 52.5% of all late delivery items**. Managing just ~68 bottleneck sellers resolves over half of all delivery failures marketplace-wide.
+3. **The First-Purchase Churn Multiplier:** A bad first impression permanently destroys repeat buying. Customers whose initial order arrived late showed a **44% relative drop in repeat purchases** compared to on-time buyers (1.82% vs. 3.40%).
+4. **Severe Regional Disparities:** Deliveries to Southern hubs (São Paulo, Rio de Janeiro) average 8–11 transit days (>92% on-time). Remote Northern states (Maranhão, Ceará, Pará) suffer **19–24 day transit times**, with Maranhão (MA) dropping to **82.6% on-time fulfillment**.
 
 ---
 
-## Operational Recommendations
+## 🎯 4 Data-Backed Strategic Recommendations
 
-Full executive memorandum in [`docs/memo.md`](docs/memo.md):
+From the executive memorandum ([`docs/memo.md`](docs/memo.md)):
 
-1. **Tiered Seller SLA Gating (Target Top 10% Bottlenecks):** Enforce a 3-strike fulfillment policy for Quintile 5 sellers (>15% late dispatch rate). Require platform-managed fulfillment or throttle search ranking exposure until late dispatch drops below 5%. Resolves >50% of late delivery occurrences.
-2. **Dynamic Delivery Promise (EDD) Calibration:** Add dynamic +3 to +5 day buffer to checkout Estimated Delivery Dates for Northern/Northeastern zones (MA, CE, PA) to set realistic expectations and shift orders into the on-time bucket.
-3. **Automated Proactive Retention Vouchers:** Trigger automated apology notifications with a 15% discount voucher when orders breach transit estimates by 4+ days, recovering at-risk first-time buyers.
-4. **Southeastern Cross-Docking Hubs:** Consolidate carrier handoffs in São Paulo (where >70% of sellers reside) for high-volume cross-state transit corridors.
-
----
-
-## Interactive Dashboard
-
-The dashboard provides 3 core analytical drill-downs:
-1. **Executive Overview:** High-level marketplace health, GMV trajectory ($13.59M total GMV, $136.68 AOV), and monthly growth (+104% MoM peak during Black Friday 2017).
-2. **Delivery Performance:** Satisfaction cliff curve by delay bucket, transit days percentiles (median 10 days, P90 23 days), and state heatmaps.
-3. **Seller Bottleneck Scorecards:** 80/20 Pareto distribution curve and seller quintile benchmarks.
-
-* **Live Web App:** Accessible via [Streamlit Cloud](https://daisy-olist-analytics.streamlit.app).
-* **Power BI File:** Modeling and DAX measures available in [`powerbi/dax_measures.md`](powerbi/dax_measures.md).
+* **1. Implement Tiered Seller SLA Gating (Target Top 10% Bottlenecks):** Enforce a 3-strike fulfillment rule for Quintile 5 sellers (>15% late dispatch rate). Require chronic offenders to adopt platform-managed fulfillment or throttle search ranking exposure until their late rate falls below 5%.
+* **2. Dynamic Estimated Delivery Date (EDD) Calibration:** Add an algorithmic +3 to +5 day buffer to checkout delivery estimates for Northern/Northeastern zones (MA, CE, PA). Under-promising and over-delivering shifts orders from "Late" to "On Time", protecting customer review ratings.
+* **3. Automated Proactive Retention Recovery Vouchers:** Trigger an automated status update with an apology and a 15% discount voucher when orders cross 4+ days past their promised date, re-engaging at-risk first-time buyers before they leave a 1-star review.
+* **4. São Paulo Cross-Docking Hub Consolidations:** With >70% of sellers based in São Paulo, partner with regional logistics aggregators to batch cross-state shipments destined for northern transit corridors.
 
 ---
 
-## Data Model (Star Schema)
+## 📊 The 3-Page Power BI Dashboard & Live Web App
+
+The dashboard is designed for executives and operations managers, built with a clean 3-page layout:
+
+| Page | Core Business Question Answered | Key Visuals & DAX Metrics |
+|---|---|---|
+| **Page 1: Executive KPI Overview** | *How healthy is overall revenue, volume, and fulfillment?* | KPI Summary Cards (`[GMV]`, `[Orders]`, `[AOV]`), Monthly Dual-Axis Revenue Trajectory, MoM Growth % (`[GMV MoM %]`). |
+| **Page 2: Delivery & Satisfaction** | *How does logistics performance affect customer sentiment?* | The Satisfaction Cliff Chart (`[Avg Review Score]` vs `Delay Buckets`), State Lateness Rankings (`[On-Time %]`), Repeat Customer Cliff Cards. |
+| **Page 3: Seller Bottlenecks & Pareto** | *Where should operations intervene to stop late shipments?* | 80/20 Pareto Cumulative Lateness Curve, Seller Quintile Benchmarks (`NTILE`), Searchable Bottleneck Seller Scorecard. |
+
+* **Live Interactive Version:** [Try the Streamlit Web Application](https://daisy-olist-analytics.streamlit.app) (Zero-install, works on mobile & desktop).
+* **Power BI Desktop Blueprint:** Detailed visual layout, color codes, and card settings in [`powerbi/POWERBI_BUILD_GUIDE.md`](powerbi/POWERBI_BUILD_GUIDE.md).
+
+---
+
+## 🏗️ Technical Architecture & Modeling (For Technical Leaders)
+
+### Dimensional Star Schema (`mart` Schema)
+To prevent join multiplication (a common pitfall where joining multi-item or multi-payment orders inflates revenue), the raw data was transformed into an optimized dimensional model:
 
 ```mermaid
 erDiagram
@@ -74,57 +68,51 @@ erDiagram
     DIM_SELLER ||--o{ FACT_ORDER_ITEMS : "fulfils"
 ```
 
-* **Data Layers:** `raw` (CSVs ingested as text) → `staging` (typed, cleaned, deduplicated views) → `mart` (star schema dimensional marts).
-* **Grains:**
-  * `mart.fact_orders`: Exactly 1 row per order (99,441 rows; PK: `order_id`).
-  * `mart.fact_order_items`: Exactly 1 row per order item (112,650 rows; Composite PK: `order_id`, `order_item_id`).
-  * **Financial Reconciliation:** `SUM(items_value)` in `fact_orders` matches raw items sum at **$13,591,643.70** (zero fanout).
+* **`mart.fact_orders` (Grain: 1 row per order):** 99,441 rows. Centralizes order lifecycle timestamps, delay days, delay buckets, review scores, and financial totals.
+* **`mart.fact_order_items` (Grain: 1 row per order item):** 112,650 rows. Stores item price, freight, product ID, and seller ID.
+* **Dimensions:** `dim_customer` (96,096 unique buyers), `dim_seller` (3,095 sellers), `dim_product` (32,951 items), `dim_date` (1,096 calendar days).
+
+### 📐 Reconciled Financials & Metrics (SQL vs DAX)
+
+Every metric in the dashboard was audited between PostgreSQL and DAX with **zero variance** ([`docs/reconciliation.md`](docs/reconciliation.md)):
+
+| Metric | Business Formula | DAX Measure | Verified Value | Status |
+|---|---|---|:---:|:---:|
+| **Gross Merchandise Value (GMV)** | Sum of item prices (excl. canceled/unavailable) | `SUM(fact_orders[items_value])` | **$13,591,643.70** | ✅ Exact Match |
+| **Total Orders** | Distinct count of order IDs | `DISTINCTCOUNT(fact_orders[order_id])` | **99,441** | ✅ Exact Match |
+| **Delivered Orders** | Delivered orders with valid customer date | `CALCULATE([Orders], fact_orders[is_delivered]=TRUE)` | **96,470** | ✅ Exact Match |
+| **Average Order Value (AOV)** | GMV divided by Orders using `DIVIDE` | `DIVIDE([GMV], [Orders], 0)` | **$136.68** | ✅ Exact Match |
+| **On-Time Fulfillment %** | Orders delivered on/before promised date | `DIVIDE([OnTimeOrders], [Delivered Orders], 0)` | **93.23%** | ✅ Exact Match |
+| **Average Review Score** | Deduplicated latest review ratings | `AVERAGE(fact_orders[review_score])` | **4.09 ★** | ✅ Exact Match |
 
 ---
 
-## Metric Definitions & DAX Suite
+## 🛠️ Data Quality & Pitfalls Solved
 
-Complete DAX formulas and technical documentation available in [`powerbi/dax_measures.md`](powerbi/dax_measures.md):
-
-| Metric | SQL / Business Definition | DAX Measure | Reconciled Value |
-|---|---|---|:---:|
-| **GMV** | Sum of item prices excluding freight for valid orders | `[GMV]` | **$13,591,643.70** |
-| **Orders** | Distinct count of unique order IDs | `[Orders]` | **99,441** |
-| **AOV** | GMV divided by Orders using `DIVIDE` | `[AOV]` | **$136.68** |
-| **Delivered Orders** | Distinct orders where `is_delivered = TRUE` | `[Delivered Orders]` | **96,470** |
-| **On-Time Rate %** | Share of delivered orders with `delay_days <= 0` | `[On-Time %]` | **93.23%** |
-| **Avg Review Score** | Average of deduplicated order review scores | `[Avg Review Score]` | **4.09 ★** |
-| **Low Score %** | Share of reviews with score 1 or 2 | `[Low Score %]` | **14.92%** |
-| **Repeat Customer %** | Share of unique customers with 2+ orders | `[Repeat Customer %]` | **3.12%** |
-
----
-
-## Data Quality & Profiling Notes
-
-Documented empirically in [`docs/data_quality.md`](docs/data_quality.md):
+Empirical audits documented in [`docs/data_quality.md`](docs/data_quality.md) and resolved in `sql/02_staging.sql`:
 * **Duplicate Reviews:** 814 duplicate review IDs and 547 multi-review orders resolved by filtering to latest submission (`ROW_NUMBER() OVER (PARTITION BY order_id ORDER BY review_creation_date DESC, review_answer_timestamp DESC)`).
-* **Payment Fanout Prevention:** 2,961 multi-payment orders pre-aggregated in `staging.payments_per_order` prior to joining fact orders.
-* **Timestamp Cleanliness:** Identified 8 orders marked `delivered` with missing delivery timestamps (excluded from delivery KPIs). 61 orders with delivery preceding approval dates flagged and documented.
+* **Payment Revenue Fanout:** 2,961 orders with multiple payment methods (vouchers, installments) pre-aggregated to 1 row per order before joining fact tables.
+* **Timestamp Anomalies:** Flagged 61 orders with delivery preceding approval and 8 orders marked `delivered` without delivery dates.
 
 ---
 
-## How to Reproduce Locally
+## 💻 How to Run Locally
 
 ```bash
 # 1. Clone repository
 git clone https://github.com/Daizy-Mgmt/olist-delivery-satisfaction-analytics.git
 cd olist-delivery-satisfaction-analytics
 
-# 2. Setup environment & start PostgreSQL in Docker
+# 2. Setup database with Docker
 cp .env.example .env
 docker compose up -d
 
-# 3. Ingest raw CSV data & build Star Schema
-python -m pip install -r requirements.txt
+# 3. Load data & generate Star Schema Marts
+pip install -r requirements.txt
 python scripts/load_raw_tables.py
 python scripts/build_and_verify_marts.py
 
-# 4. Run SQL analysis catalog
+# 4. Run SQL analysis queries
 python scripts/run_analysis_queries.py
 
 # 5. Launch interactive web dashboard
@@ -133,16 +121,10 @@ streamlit run app.py
 
 ---
 
-## Limitations
+## 👤 About the Author: Daisy Phukan
 
-* **Association vs. Causation:** Review scores reflect the full fulfillment experience; delivery delays strongly associate with lower scores, but product defects or packaging issues can also drive negative reviews.
-* **Estimated Delivery Reference:** Delay is measured relative to Olist's promised Estimated Delivery Date (EDD).
-* **Time Horizon:** Dataset covers 2016 to 2018; modern macro freight conditions and carrier infrastructures may differ.
+* **Current Role:** Technical Project Manager (Promoted from Trainee) at Agile Robots SE (Bengaluru, India).
+* **Target Role:** Associate / Junior **Business Analyst, Data Analyst, or Commercial Operations Analyst** (Robotics, Industrial Tech, SaaS, Marketplace).
+* **Why this profile stands out:** Combines hands-on technical analytics (SQL CTEs, dimensional modeling, Power BI DAX, Python) with real-world project management and business execution rigor.
 
----
-
-## About the Author
-
-Built by **Daisy Phukan** | Technical Project Manager transitioning to Business & Data Analytics.  
-* [LinkedIn Profile](https://linkedin.com/in/daisy-phukan-a401a4228)  
-* [GitHub](https://github.com/Daizy-Mgmt)
+📬 **Connect:** [LinkedIn Profile](https://linkedin.com/in/daisy-phukan-a401a4228) · [GitHub Profile](https://github.com/Daizy-Mgmt)
