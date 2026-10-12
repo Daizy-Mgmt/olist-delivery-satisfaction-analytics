@@ -2,24 +2,26 @@
 ## Streamlit Dashboard link : https://olist-delivery-satisfaction-analytics-daisy-phukan.streamlit.app/
 
 [![Status](https://img.shields.io/badge/Project%20Status-Production%20Verified-success?style=for-the-badge&logo=checkmarx)](https://github.com/Daizy-Mgmt/olist-delivery-satisfaction-analytics)
-[![Power BI](https://img.shields.io/badge/Power%20BI-Star%20Schema%20%2B%2010%20DAX%20Measures-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](powerbi/dax_measures.md)
+[![Live App](https://img.shields.io/badge/Live%20Decision%20Suite-Streamlit%20Cloud-FF4B4B?style=for-the-badge&logo=streamlit)](https://daisy-olist-analytics.streamlit.app)
+[![Power BI](https://img.shields.io/badge/Power%20BI-Star%20Schema%20%2B%2014%20DAX%20Measures-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](powerbi/TabularEditor_Measures.dax)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%20Star%20Schema-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](sql/)
 [![BA Governance](https://img.shields.io/badge/BA%20%26%20TPM-BRD%20%7C%20RACI%20%7C%20SLA%20Simulator-059669?style=for-the-badge)](docs/brd_seller_sla_governance.md)
 
-> 📄 **Executive Strategy Memo:** [`docs/memo.md`](docs/memo.md)  
+> 🚀 **Live Interactive Decision Suite:** [daisy-olist-analytics.streamlit.app](https://daisy-olist-analytics.streamlit.app)  
 > 📋 **BA/TPM Business Requirements Document (BRD, User Stories, Gherkin UAT, RACI):** [`docs/brd_seller_sla_governance.md`](docs/brd_seller_sla_governance.md)  
-> 📊 **Power BI Build Blueprint & 10-Measure DAX Library:** [`powerbi/POWERBI_BUILD_GUIDE.md`](powerbi/POWERBI_BUILD_GUIDE.md) · [`powerbi/dax_measures.md`](powerbi/dax_measures.md)  
+> 📄 **Executive Strategy Memo:** [`docs/memo.md`](docs/memo.md)  
+> 📊 **Power BI Theme JSON, Build Blueprint & DAX Script:** [`powerbi/Olist_Enterprise_Theme.json`](powerbi/Olist_Enterprise_Theme.json) · [`powerbi/TabularEditor_Measures.dax`](powerbi/TabularEditor_Measures.dax) · [`powerbi/POWERBI_BUILD_GUIDE.md`](powerbi/POWERBI_BUILD_GUIDE.md)  
 > 🔍 **SQL-to-Power BI Financial Reconciliation (`0.00% Variance`):** [`docs/reconciliation.md`](docs/reconciliation.md)
 
 ---
 
-## 🖥️ Executive Dashboard & Commercial SLA Simulator Previews
+## 🖥️ Executive Dashboard & Multi-Lever SLA Breakeven Simulator Previews
 
 ### 1. Executive KPI Scorecard, Satisfaction Cliff & Seller Pareto (`app.py` / Power BI Suite)
-![Executive Dashboard Preview](docs/images/executive_dashboard_preview.svg)
+![Executive Dashboard Preview](docs/images/executive_dashboard_preview.png)
 
-### 2. Interactive SLA Policy & Commercial ROI Sensitivity Simulator (Module 4)
-![SLA Policy & Commercial ROI Simulator](docs/images/sla_simulator_preview.svg)
+### 2. Multi-Lever SLA Policy Bridge & 2D Breakeven Sensitivity Matrix (Module 4)
+![SLA Policy & Commercial ROI Simulator](docs/images/sla_simulator_preview.png)
 
 ---
 

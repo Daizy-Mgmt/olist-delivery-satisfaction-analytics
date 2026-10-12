@@ -1,0 +1,71 @@
+{
+  "name": "Olist Enterprise Consulting Theme (IBCS / McKinsey Standard)",
+  "dataColors": [
+    "#2563EB",
+    "#059669",
+    "#D97706",
+    "#DC2626",
+    "#0F172A",
+    "#64748B",
+    "#7C3AED",
+    "#991B1B"
+  ],
+  "background": "#F8FAFC",
+  "foreground": "#0F172A",
+  "tableAccent": "#2563EB",
+  "good": "#059669",
+  "neutral": "#D97706",
+  "bad": "#DC2626",
+  "maximum": "#059669",
+  "center": "#D97706",
+  "minimum": "#DC2626",
+  "null": "#94A3B8",
+  "textClasses": {
+    "callout": {
+      "fontSize": 24,
+      "fontFace": "Segoe UI Bold",
+      "color": "#0F172A"
+    },
+    "title": {
+      "fontSize": 12,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#0F172A"
+    },
+    "header": {
+      "fontSize": 10,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#334155"
+    },
+    "label": {
+      "fontSize": 9,
+      "fontFace": "Segoe UI",
+      "color": "#475569"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#FFFFFF" } },
+            "transparency": 0
+          }
+        ],
+        "border": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#E2E8F0" } },
+            "radius": 8
+          }
+        ],
+        "visualHeader": [
+          {
+            "background": { "solid": { "color": "#FFFFFF" } },
+            "border": { "solid": { "color": "#E2E8F0" } }
+          }
+        ]
+      }
+    }
+  }
+}

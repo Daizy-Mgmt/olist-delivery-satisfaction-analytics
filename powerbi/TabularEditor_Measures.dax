@@ -1,0 +1,120 @@
+// =============================================================================
+// OLIST COMMERCIAL OPERATIONS & SLA SUITE — PRODUCTION DAX LIBRARY
+// Author: Daisy Phukan (Technical Project Manager / BI & Business Analyst)
+// Reconciled against PostgreSQL 15 Star Schema ($13,591,643.70 GMV | 0.00% Var)
+// =============================================================================
+
+// --- 1. CORE FINANCIAL & ORDER METRICS ---
+
+GMV = 
+CALCULATE(
+    SUM(fact_orders[items_value]),
+    NOT(fact_orders[order_status] IN {"canceled", "unavailable"})
+)
+
+Orders = 
+DISTINCTCOUNT(fact_orders[order_id])
+
+Delivered Orders = 
+CALCULATE(
+    [Orders],
+    fact_orders[is_delivered] = TRUE()
+)
+
+AOV = 
+DIVIDE([GMV], [Orders], 0)
+
+GMV MoM % = 
+VAR CurrentMonthGMV = [GMV]
+VAR PriorMonthGMV = 
+    CALCULATE(
+        [GMV],
+        DATEADD(dim_date[date_key], -1, MONTH)
+    )
+RETURN
+    DIVIDE(CurrentMonthGMV - PriorMonthGMV, PriorMonthGMV, BLANK())
+
+
+// --- 2. DELIVERY SLA & LOGISTICS METRICS ---
+
+On-Time Orders = 
+CALCULATE(
+    [Delivered Orders],
+    fact_orders[delay_days] <= 0
+)
+
+Late Orders = 
+CALCULATE(
+    [Delivered Orders],
+    fact_orders[delay_days] > 0
+)
+
+On-Time % = 
+DIVIDE([On-Time Orders], [Delivered Orders], 0)
+
+SLA Variance vs 95% Target = 
+[On-Time %] - 0.95
+
+Avg Delivery Delay (Late Orders) = 
+CALCULATE(
+    AVERAGE(fact_orders[delay_days]),
+    fact_orders[is_delivered] = TRUE(),
+    fact_orders[delay_days] > 0
+)
+
+
+// --- 3. CUSTOMER SATISFACTION (CSAT) & COHORT RETENTION METRICS ---
+
+Avg Review Score = 
+AVERAGE(fact_orders[review_score])
+
+Negative Review Orders (1-2 Stars) = 
+CALCULATE(
+    [Orders],
+    fact_orders[review_score] IN {1, 2}
+)
+
+Low Score Share % = 
+DIVIDE(
+    [Negative Review Orders (1-2 Stars)],
+    CALCULATE([Orders], NOT(ISBLANK(fact_orders[review_score]))),
+    0
+)
+
+Repeat Customer % = 
+VAR TotalUniqueCustomers = DISTINCTCOUNT(dim_customer[customer_unique_id])
+VAR RepeatCustomers = 
+    COUNTROWS(
+        FILTER(
+            VALUES(dim_customer[customer_unique_id]),
+            CALCULATE(DISTINCTCOUNT(fact_orders[order_id])) >= 2
+        )
+    )
+RETURN
+    DIVIDE(RepeatCustomers, TotalUniqueCustomers, 0)
+
+
+// --- 4. PARETO SELLER GOVERNANCE & SLA SIMULATOR MEASURES ---
+
+Seller Late Rate % = 
+VAR TotalSellerItems = COUNTROWS(fact_order_items)
+VAR LateSellerItems = 
+    CALCULATE(
+        COUNTROWS(fact_order_items),
+        fact_orders[is_delivered] = TRUE(),
+        fact_orders[delay_days] > 0
+    )
+RETURN
+    DIVIDE(LateSellerItems, TotalSellerItems, 0)
+
+Seller SLA Governance Tier = 
+VAR LateRate = [Seller Late Rate %]
+VAR ItemCount = COUNTROWS(fact_order_items)
+RETURN
+    SWITCH(
+        TRUE(),
+        ItemCount < 30, "Insufficient Volume (<30)",
+        LateRate >= 0.12, "Tier 3: Mandatory 3PL / Search Throttle",
+        LateRate >= 0.075, "Tier 2: SLA Warning & Lead-Time Audit",
+        "Tier 1: SLA Compliant"
+    )

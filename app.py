@@ -120,6 +120,16 @@ st.markdown("""
         color: #1e293b;
         margin-top: 8px;
     }
+    .honesty-callout {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-left: 5px solid #d97706;
+        padding: 14px 18px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        color: #78350f;
+        margin-bottom: 16px;
+    }
     .gov-footer {
         margin-top: 32px;
         padding: 14px 20px;
@@ -160,12 +170,24 @@ def load_data():
     df_states["macro_region"] = df_states["customer_state"].map(REGION_MAP).fillna("Other")
     df_sellers["macro_region"] = df_sellers["seller_state"].map(REGION_MAP).fillna("Other")
     df_monthly = pd.merge(df_kpi, df_delivery, on="year_month", how="left")
-    return df_kpi, df_delivery, df_reviews, df_states, df_sellers, df_repeat, df_monthly
+
+    # Sort sellers by late_items desc for Pareto ranking
+    df_sellers_pareto = df_sellers.sort_values(by=["late_items", "seller_late_rate_pct"], ascending=[False, False]).reset_index(drop=True)
+    df_sellers_pareto["pareto_rank"] = df_sellers_pareto.index + 1
+    df_sellers_pareto["seller_pct_rank"] = df_sellers_pareto["pareto_rank"] / len(df_sellers_pareto) * 100.0
+    df_sellers_pareto["cum_late_share_pct"] = df_sellers_pareto["late_items"].cumsum() / df_sellers_pareto["late_items"].sum() * 100.0
+
+    return df_kpi, df_delivery, df_reviews, df_states, df_sellers_pareto, df_repeat, df_monthly
 
 df_kpi, df_delivery, df_reviews, df_states, df_sellers, df_repeat, df_monthly = load_data()
 
+# Pre-build the Top 68 (Top 10%) Bottleneck Sellers CSV for 1-click export anywhere
+top_68_sellers = df_sellers.head(68).copy()
+top_68_sellers["sla_action_tier"] = "TIER_3_MANDATORY_3PL_OR_SEARCH_THROTTLE"
+top_68_csv_bytes = top_68_sellers.to_csv(index=False).encode("utf-8")
+
 # Common Plotly Enterprise Layout Helper
-def apply_enterprise_layout(fig, height=380, show_legend=True):
+def apply_enterprise_layout(fig, height=370, show_legend=True):
     fig.update_layout(
         font=dict(family="Plus Jakarta Sans, sans-serif", size=12, color="#1e293b"),
         plot_bgcolor="#ffffff",
@@ -181,7 +203,7 @@ def apply_enterprise_layout(fig, height=380, show_legend=True):
     return fig
 
 # -----------------------------------------------------------------------------
-# 3. Sidebar Navigation & Global Slicers
+# 3. Sidebar Navigation & Global Slicers (State/Region, Seller Quintile, Delay Tier)
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("### 🧭 Executive Navigation")
@@ -202,29 +224,53 @@ with st.sidebar:
 
     all_months = sorted(df_monthly["year_month"].unique())
     selected_months = st.select_slider(
-        "Reporting Window (Year-Month):",
+        "1. Reporting Window (Year-Month):",
         options=all_months,
         value=(all_months[0], all_months[-1])
     )
 
     all_regions = ["Southeast", "South", "Northeast", "Central-West", "North"]
     selected_regions = st.multiselect(
-        "Macro-Regions (State Views):",
+        "2. Macro-Regions (State & Seller Views):",
         options=all_regions,
         default=all_regions
     )
 
+    all_delay_tiers = list(df_reviews["delay_bucket"].unique())
+    selected_delay_tiers = st.multiselect(
+        "3. Delivery Delay Tiers:",
+        options=all_delay_tiers,
+        default=all_delay_tiers
+    )
+
+    selected_global_quintiles = st.multiselect(
+        "4. Seller SLA Quintiles (1=Best, 5=Worst):",
+        options=[1, 2, 3, 4, 5],
+        default=[1, 2, 3, 4, 5]
+    )
+
     sla_target_pct = st.slider(
-        "Corporate On-Time SLA Target (%):",
+        "5. Corporate On-Time SLA Target (%):",
         min_value=85.0,
         max_value=98.0,
         value=95.0,
         step=0.5,
-        help="Adjusts the corporate SLA benchmark reference line across executive and state charts."
+        help="Dynamically updates corporate SLA target lines and breach flags across all charts."
     )
 
     st.markdown("---")
-    st.markdown("### 👤 Author & Architecture")
+    st.markdown("### ⚡ Instant Ops Action")
+    st.download_button(
+        label="📥 Export 68 Bottleneck Sellers (CSV)",
+        data=top_68_csv_bytes,
+        file_name="olist_top68_pareto_bottleneck_sellers.csv",
+        mime="text/csv",
+        use_container_width=True,
+        help="Downloads the top 10% worst active sellers (68 merchants driving 52.5% of all late items) for immediate CRM/Ops enforcement."
+    )
+
+    st.markdown("---")
+    st.markdown("### 👤 Candidate Profile")
     st.markdown(
         "**Daisy Phukan**  \n"
         "*Technical Project Manager · BI & Business Analyst*  \n"
@@ -233,24 +279,33 @@ with st.sidebar:
         "🔗 [GitHub](https://github.com/Daizy-Mgmt) · [LinkedIn](https://linkedin.com/in/daisy-phukan-a401a4228)"
     )
 
-# Filter monthly data by selected window
+# Apply global slicers
 df_m_filtered = df_monthly[
     (df_monthly["year_month"] >= selected_months[0]) &
     (df_monthly["year_month"] <= selected_months[1])
 ].copy()
 
-df_states_filtered = df_states[
-    df_states["macro_region"].isin(selected_regions if selected_regions else all_regions)
+active_regions = selected_regions if selected_regions else all_regions
+df_states_filtered = df_states[df_states["macro_region"].isin(active_regions)].copy()
+
+active_delay_tiers = selected_delay_tiers if selected_delay_tiers else all_delay_tiers
+df_reviews_filtered = df_reviews[df_reviews["delay_bucket"].isin(active_delay_tiers)].copy()
+df_repeat_filtered = df_repeat[df_repeat["first_order_delay_bucket"].isin(active_delay_tiers)].copy()
+
+active_quintiles = selected_global_quintiles if selected_global_quintiles else [1, 2, 3, 4, 5]
+df_sellers_filtered = df_sellers[
+    (df_sellers["seller_quintile"].isin(active_quintiles)) &
+    (df_sellers["macro_region"].isin(active_regions))
 ].copy()
 
 # -----------------------------------------------------------------------------
 # Top Executive Banner
 # -----------------------------------------------------------------------------
-st.markdown(f"""
+st.markdown("""
 <div class="exec-banner">
     <div>
         <h1>📦 Olist Commercial Operations & Delivery SLA Decision Suite</h1>
-        <p>Star Schema Analytical Mart (PostgreSQL 15) · 10 Reconciled Power BI DAX Measures · Interactive SLA & Margin Sensitivity Engine</p>
+        <p>Star Schema Analytical Mart (PostgreSQL 15) · 10 Reconciled Power BI DAX Measures · Multi-Lever SLA & Margin Sensitivity Engine</p>
     </div>
     <div class="gov-badge">
         ✓ VERIFIED STAR SCHEMA: $13,591,643.70 GMV (0.00% DAX VARIANCE)
@@ -262,7 +317,6 @@ st.markdown(f"""
 # VIEW 1: EXECUTIVE KPI & SLA SCORECARD
 # =============================================================================
 if page == "1. Executive KPI & SLA Scorecard":
-    # Compute window metrics alongside full-dataset verified totals
     window_gmv = df_m_filtered["gmv"].sum()
     window_orders = int(df_m_filtered["orders_count"].sum())
     window_delivered = int(df_m_filtered["total_delivered_orders"].sum())
@@ -271,7 +325,6 @@ if page == "1. Executive KPI & SLA Scorecard":
     window_aov = (window_gmv / window_orders) if window_orders > 0 else 0.0
     sla_gap = window_ontime_pct - sla_target_pct
 
-    # 5 Enterprise KPI Cards (Full Star Schema Headline + Active Window Context)
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         st.markdown(f"""
@@ -302,7 +355,7 @@ if page == "1. Executive KPI & SLA Scorecard":
             <div class="kpi-value">$136.68</div>
             <div class="kpi-sub">
                 <span class="delta-neu">Window: ${window_aov:.2f}</span>
-                <span style="color:#64748b;">Item + Freight</span>
+                <span style="color:#64748b;">Reconciled DAX</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -320,7 +373,7 @@ if page == "1. Executive KPI & SLA Scorecard":
         </div>
         """, unsafe_allow_html=True)
     with c5:
-        st.markdown(f"""
+        st.markdown("""
         <div class="kpi-card warn">
             <div class="kpi-title">Customer CSAT (Review ★)</div>
             <div class="kpi-value">4.09 / 5.0</div>
@@ -333,7 +386,6 @@ if page == "1. Executive KPI & SLA Scorecard":
 
     st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-    # Row 2: Diagnostic Trajectory Visuals
     col_left, col_right = st.columns([6, 6])
 
     with col_left:
@@ -407,10 +459,9 @@ if page == "1. Executive KPI & SLA Scorecard":
         st.plotly_chart(fig_sla, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Row 3: Executive Summary Table & Key Takeaway
     st.markdown("""
     <div class="insight-callout">
-        <strong>🧭 Executive Diagnostic Summary:</strong> Marketplace volume scaled rapidly through November 2017 ($1.00M Black Friday peak), but carrier and seller capacity failed to absorb peak load—driving P90 tail transit times from <strong>19 days up to 32 days</strong> in Q1 2018 and pushing On-Time SLA down to <strong>81.04%</strong> in March 2018 before operational recovery in Q2 2018.
+        <strong>🧭 Executive Diagnostic Summary:</strong> Marketplace volume scaled 8.3x through November 2017 ($1.00M Black Friday peak), but seller dispatch and regional carrier capacity failed to absorb peak load—driving P90 tail transit times from <strong>19 days up to 32 days</strong> in Q1 2018 and pushing On-Time SLA down to <strong>81.04%</strong> in March 2018 before operational recovery in Q2 2018.
     </div>
     """, unsafe_allow_html=True)
 
@@ -418,31 +469,44 @@ if page == "1. Executive KPI & SLA Scorecard":
 # VIEW 2: CUSTOMER SATISFACTION & COHORT DIAGNOSTICS
 # =============================================================================
 elif page == "2. Customer Satisfaction & Cohort Diagnostics":
+    # Prominent Base-Rate Honesty Banner (Council Item #6)
+    st.markdown("""
+    <div class="honesty-callout">
+        <strong>🎯 Base-Rate Analytical Honesty (Executive Framing):</strong> Marketplace repeat rate is structurally <strong>3.12% (96.88% one-time buyers)</strong>, meaning the primary financial damage of 8+ day delays is the <strong>79.3% 1–2 star review collapse poisoning product conversion</strong> and inflating customer support load—rather than repeat LTV erosion alone. Furthermore, <em>"Not delivered"</em> orders exhibit a <strong>4.68%</strong> repeat rate because buyers whose initial order was canceled immediately placed a replacement order.
+    </div>
+    """, unsafe_allow_html=True)
+
     col_l, col_r = st.columns([6, 6])
 
     with col_l:
         st.markdown('<div class="chart-box">', unsafe_allow_html=True)
         st.markdown('<div class="assertion-title">The 8-Day Satisfaction Cliff: 1–2★ Reviews Surge 8.5x (9.3% ➔ 79.3%) Past 8 Days Late</div>', unsafe_allow_html=True)
-        st.markdown('<div class="assertion-subtitle">Average Review Rating (★) and Negative Review Share (%) by Delivery Delay Tier (n = 99,441)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="assertion-subtitle">Average Review Rating (★) and Negative Review Share (%) by Delivery Delay Tier | Filtered by Slicer</div>', unsafe_allow_html=True)
 
+        color_map_delay = {
+            "On time / early": "#059669",
+            "1-3 days late": "#d97706",
+            "4-7 days late": "#ea580c",
+            "8+ days late": "#dc2626",
+            "Not delivered": "#7f1d1d"
+        }
         fig_cliff = go.Figure()
-        cliff_colors = ["#059669", "#d97706", "#ea580c", "#dc2626", "#7f1d1d"]
         fig_cliff.add_trace(go.Bar(
-            x=df_reviews["delay_bucket"],
-            y=df_reviews["avg_review_score"],
+            x=df_reviews_filtered["delay_bucket"],
+            y=df_reviews_filtered["avg_review_score"],
             name="Avg Review Score (1–5★)",
-            marker_color=cliff_colors,
-            text=df_reviews["avg_review_score"].apply(lambda x: f"{x:.2f} ★"),
+            marker_color=[color_map_delay.get(b, "#2563eb") for b in df_reviews_filtered["delay_bucket"]],
+            text=df_reviews_filtered["avg_review_score"].apply(lambda x: f"{x:.2f} ★"),
             textposition="outside",
             hovertemplate="<b>%{x}</b><br>Avg Rating: %{y:.2f} ★<extra></extra>"
         ))
         fig_cliff.add_trace(go.Scatter(
-            x=df_reviews["delay_bucket"],
-            y=df_reviews["low_score_share_pct"],
+            x=df_reviews_filtered["delay_bucket"],
+            y=df_reviews_filtered["low_score_share_pct"],
             name="1–2★ Negative Review Share (%)",
             yaxis="y2",
             mode="lines+markers+text",
-            text=df_reviews["low_score_share_pct"].apply(lambda x: f"{x:.1f}%"),
+            text=df_reviews_filtered["low_score_share_pct"].apply(lambda x: f"{x:.1f}%"),
             textposition="top center",
             line=dict(color="#0f172a", width=3, dash="dot"),
             marker=dict(size=8, color="#dc2626"),
@@ -452,53 +516,39 @@ elif page == "2. Customer Satisfaction & Cohort Diagnostics":
             yaxis=dict(title="Average Review Score (★)", range=[0, 5.4]),
             yaxis2=dict(title="1–2 Star Review Share (%)", overlaying="y", side="right", range=[0, 100], showgrid=False, ticksuffix="%")
         )
-        apply_enterprise_layout(fig_cliff, height=370)
+        apply_enterprise_layout(fig_cliff, height=360)
         st.plotly_chart(fig_cliff, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_r:
         st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        st.markdown('<div class="assertion-title">Cohort Nuance: 1–7 Day Delays Cut Repeat Buying by 22.6% (3.40% ➔ 2.63%)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="assertion-title">Cohort Nuance: 1–7 Day Delays Cut Repeat Buying by 22.6% (3.40% ➔ 2.63%) on a 3.12% Base</div>', unsafe_allow_html=True)
         st.markdown('<div class="assertion-subtitle">Customer Repeat Purchase Rate (%) by First-Order Delivery Experience (n = 96,096 unique buyers)</div>', unsafe_allow_html=True)
 
-        df_rep_deliv = df_repeat.copy()
-        rep_colors = ["#059669", "#d97706", "#ea580c", "#dc2626", "#64748b"]
         fig_rep = go.Figure()
         fig_rep.add_trace(go.Bar(
-            x=df_rep_deliv["first_order_delay_bucket"],
-            y=df_rep_deliv["repeat_purchase_rate_pct"],
+            x=df_repeat_filtered["first_order_delay_bucket"],
+            y=df_repeat_filtered["repeat_purchase_rate_pct"],
             name="Repeat Purchase Rate (%)",
-            marker_color=rep_colors,
-            text=df_rep_deliv["repeat_purchase_rate_pct"].apply(lambda x: f"{x:.2f}%"),
+            marker_color=[color_map_delay.get(b, "#64748b") if b != "Not delivered" else "#64748b" for b in df_repeat_filtered["first_order_delay_bucket"]],
+            text=df_repeat_filtered["repeat_purchase_rate_pct"].apply(lambda x: f"{x:.2f}%"),
             textposition="outside",
             hovertemplate="<b>%{x}</b><br>Repeat Rate: %{y:.2f}%<br>Customers: %{customdata:,}<extra></extra>",
-            customdata=df_rep_deliv["total_customers"]
+            customdata=df_repeat_filtered["total_customers"]
         ))
         fig_rep.add_hline(
             y=3.12,
             line_dash="dash",
             line_color="#475569",
-            annotation_text="Marketplace Baseline (3.12%)",
+            annotation_text="Structural Marketplace Baseline (3.12%)",
             annotation_position="top right"
         )
         fig_rep.update_layout(
             yaxis=dict(title="Repeat Purchase Rate (%)", range=[0, 5.6], ticksuffix="%")
         )
-        apply_enterprise_layout(fig_rep, height=370, show_legend=False)
+        apply_enterprise_layout(fig_rep, height=360, show_legend=False)
         st.plotly_chart(fig_rep, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="insight-callout">
-        <strong>🔬 Senior Analytical Note (Base-Rate & Replacement Effect):</strong>
-        <ul style="margin:4px 0 0 18px; padding:0;">
-            <li><strong>Structural Base Rate:</strong> Across Olist, <strong>96.88% of customers are one-time buyers</strong> (3.12% overall repeat rate). While 1–7 day delays reduce repeat propensity by <strong>22.6% relative</strong> (from 3.40% to 2.63%), the primary financial damage of late delivery is not repeat LTV loss—it is the <strong>79.3% 1–2★ review spike</strong> that poisons product conversion and inflates customer service ticket volume.</li>
-            <li><strong>Why "Not Delivered" Shows 4.68% Repeat Rate:</strong> Customers whose initial order was canceled or unavailable immediately placed a <em>replacement order</em> on the platform within 48 hours—an important data artifact separated in our staging layer.</li>
-        </ul>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
 
     # Row 2: Geographic Corridor Analysis
     c_map1, c_map2 = st.columns([7, 5])
@@ -528,7 +578,7 @@ elif page == "2. Customer Satisfaction & Cohort Diagnostics":
             annotation_position="bottom right"
         )
         fig_st.update_layout(xaxis=dict(title="On-Time Delivery Rate (%)", range=[75, 101], ticksuffix="%"), yaxis=dict(title="Customer State"))
-        apply_enterprise_layout(fig_st, height=430, show_legend=False)
+        apply_enterprise_layout(fig_st, height=420, show_legend=False)
         st.plotly_chart(fig_st, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -555,7 +605,7 @@ elif page == "2. Customer Satisfaction & Cohort Diagnostics":
         )
         fig_scat.update_traces(textposition="top center")
         fig_scat.add_hline(y=sla_target_pct, line_dash="dash", line_color="#64748b")
-        apply_enterprise_layout(fig_scat, height=430)
+        apply_enterprise_layout(fig_scat, height=420)
         st.plotly_chart(fig_scat, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -563,14 +613,8 @@ elif page == "2. Customer Satisfaction & Cohort Diagnostics":
 # VIEW 3: SELLER PARETO (80/20) & ACTIONABLE EXCEPTION WORKLIST
 # =============================================================================
 elif page == "3. Seller Pareto (80/20) & Action Worklist":
-    df_sellers_sorted = df_sellers.sort_values(by=["late_items", "seller_late_rate_pct"], ascending=[False, False]).reset_index(drop=True)
-    df_sellers_sorted["seller_rank"] = df_sellers_sorted.index + 1
-    df_sellers_sorted["seller_pct_rank"] = df_sellers_sorted["seller_rank"] / len(df_sellers_sorted) * 100
-    total_late_items = df_sellers_sorted["late_items"].sum()
-    df_sellers_sorted["cum_late_share_pct"] = df_sellers_sorted["late_items"].cumsum() / total_late_items * 100
-
-    top_10_pct_count = int(np.ceil(len(df_sellers_sorted) * 0.10))
-    top_10_pct_late_share = df_sellers_sorted.loc[top_10_pct_count - 1, "cum_late_share_pct"]
+    top_10_pct_count = int(np.ceil(len(df_sellers) * 0.10))
+    top_10_pct_late_share = df_sellers.loc[top_10_pct_count - 1, "cum_late_share_pct"]
 
     c_p1, c_p2 = st.columns([7, 5])
 
@@ -581,8 +625,8 @@ elif page == "3. Seller Pareto (80/20) & Action Worklist":
 
         fig_pareto = go.Figure()
         fig_pareto.add_trace(go.Scatter(
-            x=df_sellers_sorted["seller_pct_rank"],
-            y=df_sellers_sorted["cum_late_share_pct"],
+            x=df_sellers["seller_pct_rank"],
+            y=df_sellers["cum_late_share_pct"],
             mode="lines",
             name="Cumulative Late Items (%)",
             line=dict(color="#dc2626", width=3),
@@ -611,7 +655,7 @@ elif page == "3. Seller Pareto (80/20) & Action Worklist":
         st.markdown('<div class="assertion-title">Quintile 5 Sellers Average 15.8% Late Rate & Drag Review Scores Down to 3.87 ★</div>', unsafe_allow_html=True)
         st.markdown('<div class="assertion-subtitle">Seller Performance Stratified by Late-Rate Quintile (NTILE(5) Window Function)</div>', unsafe_allow_html=True)
 
-        q_summary = df_sellers.groupby("seller_quintile", as_index=False).agg(
+        q_summary = df_sellers_filtered.groupby("seller_quintile", as_index=False).agg(
             sellers_count=("seller_id", "count"),
             total_items=("total_items", "sum"),
             late_items=("late_items", "sum"),
@@ -620,13 +664,14 @@ elif page == "3. Seller Pareto (80/20) & Action Worklist":
         )
         q_labels = {1: "Q1 (Best)", 2: "Q2", 3: "Q3", 4: "Q4", 5: "Q5 (Worst)"}
         q_summary["quintile_label"] = q_summary["seller_quintile"].map(q_labels)
+        q_colors_map = {1: "#059669", 2: "#10b981", 3: "#64748b", 4: "#d97706", 5: "#dc2626"}
 
         fig_q = go.Figure()
         fig_q.add_trace(go.Bar(
             x=q_summary["quintile_label"],
             y=q_summary["avg_late_rate"],
             name="Avg Seller Late Rate (%)",
-            marker_color=["#059669", "#10b981", "#64748b", "#d97706", "#dc2626"],
+            marker_color=[q_colors_map.get(q, "#2563eb") for q in q_summary["seller_quintile"]],
             text=q_summary["avg_late_rate"].apply(lambda x: f"{x:.1f}%"),
             textposition="outside"
         ))
@@ -650,24 +695,29 @@ elif page == "3. Seller Pareto (80/20) & Action Worklist":
     # Bottom Row: Actionable Operator Worklist
     st.markdown('<div class="chart-box">', unsafe_allow_html=True)
     st.markdown('<div class="assertion-title">📋 Operational Action Worklist: Bottleneck Seller SLA Governance Scorecard</div>', unsafe_allow_html=True)
-    st.markdown('<div class="assertion-subtitle">Filter active merchants by SLA tier and export the targeted intervention list directly to CSV for Ops/CRM execution.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="assertion-subtitle">Filter active merchants by SLA tier or export the Top 68 Pareto Bottleneck Sellers directly to CSV for Ops/CRM execution.</div>', unsafe_allow_html=True)
 
     f1, f2, f3, f4 = st.columns([3, 3, 3, 3])
     with f1:
-        selected_quintiles = st.multiselect("Filter by Seller Quintile:", options=[5, 4, 3, 2, 1], default=[5, 4])
+        worklist_mode = st.selectbox(
+            "Quick Preset:",
+            ["Top 68 Pareto Bottleneck Sellers (Top 10%)", "Custom Filter (Use Controls & Global Slicers)"]
+        )
     with f2:
-        min_items_filter = st.number_input("Minimum Fulfilled Items:", min_value=30, max_value=1000, value=100, step=20)
+        min_items_filter = st.number_input("Minimum Fulfilled Items:", min_value=30, max_value=1000, value=30, step=20)
     with f3:
-        min_late_rate_filter = st.slider("Min Late Rate (%):", min_value=0.0, max_value=30.0, value=8.0, step=1.0)
+        min_late_rate_filter = st.slider("Min Late Rate (%):", min_value=0.0, max_value=30.0, value=5.0, step=1.0)
 
-    df_worklist = df_sellers_sorted[
-        (df_sellers_sorted["seller_quintile"].isin(selected_quintiles if selected_quintiles else [5, 4, 3, 2, 1])) &
-        (df_sellers_sorted["total_items"] >= min_items_filter) &
-        (df_sellers_sorted["seller_late_rate_pct"] >= min_late_rate_filter)
-    ].copy()
+    if worklist_mode == "Top 68 Pareto Bottleneck Sellers (Top 10%)":
+        df_worklist = df_sellers.head(68).copy()
+    else:
+        df_worklist = df_sellers_filtered[
+            (df_sellers_filtered["total_items"] >= min_items_filter) &
+            (df_sellers_filtered["seller_late_rate_pct"] >= min_late_rate_filter)
+        ].copy()
 
     def assign_sla_action(row):
-        if row["seller_late_rate_pct"] >= 12.0 or (row["seller_quintile"] == 5 and row["late_items"] >= 40):
+        if row["seller_late_rate_pct"] >= 12.0 or (row["seller_quintile"] == 5 and row["late_items"] >= 40) or row["pareto_rank"] <= 68:
             return "🔴 Tier 3: Mandatory 3PL / Search Throttle"
         elif row["seller_late_rate_pct"] >= 7.5:
             return "🟠 Tier 2: SLA Warning & Lead-Time Audit"
@@ -680,22 +730,23 @@ elif page == "3. Seller Pareto (80/20) & Action Worklist":
         st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
         csv_bytes = df_worklist.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label=f"📥 Export {len(df_worklist)} Flagged Sellers (CSV)",
+            label=f"📥 Export {len(df_worklist)} Sellers (CSV)",
             data=csv_bytes,
             file_name="olist_flagged_seller_sla_worklist.csv",
             mime="text/csv",
             use_container_width=True
         )
 
-    display_cols = ["seller_rank", "Seller ID (Short)", "seller_state", "macro_region", "total_items", "late_items", "seller_late_rate_pct", "avg_seller_review_score", "seller_quintile", "SLA Governance Action"]
+    display_cols = ["pareto_rank", "Seller ID (Short)", "seller_state", "macro_region", "total_items", "late_items", "seller_late_rate_pct", "cum_late_share_pct", "avg_seller_review_score", "seller_quintile", "SLA Governance Action"]
     st.dataframe(
         df_worklist[display_cols].rename(columns={
-            "seller_rank": "Pareto Rank",
+            "pareto_rank": "Pareto Rank",
             "seller_state": "State",
             "macro_region": "Region",
             "total_items": "Total Items",
             "late_items": "Late Items",
             "seller_late_rate_pct": "Late Rate (%)",
+            "cum_late_share_pct": "Cum. Late Share (%)",
             "avg_seller_review_score": "Avg Rating (★)",
             "seller_quintile": "Quintile"
         }),
@@ -706,12 +757,18 @@ elif page == "3. Seller Pareto (80/20) & Action Worklist":
     st.markdown('</div>', unsafe_allow_html=True)
 
 # =============================================================================
-# VIEW 4: SLA POLICY & COMMERCIAL ROI SIMULATOR (DECISION ENGINE)
+# VIEW 4: MULTI-LEVER SLA POLICY & COMMERCIAL BREAKEVEN SIMULATOR
 # =============================================================================
 elif page == "4. SLA Policy & Commercial ROI Simulator":
+    # Explicit Base-Rate Honesty & Multi-Lever Architecture Banner (Council Verdict #3, #5, #6)
     st.markdown("""
-    <div class="insight-callout" style="margin-bottom: 16px;">
-        <strong>🎛️ Executive Decision & Breakeven Simulator:</strong> Modeled on commercial deal-desk and operational ROI calculators. Adjust policy parameters below to evaluate the trade-off between <strong>enforcing strict Seller SLA cutoffs</strong> (which risks losing GMV from non-compliant sellers who churn) versus <strong>eliminating late deliveries, deterring 1–2★ reviews, and reducing customer support/voucher leakage</strong>.
+    <div class="honesty-callout">
+        <strong>🧮 Multi-Lever Sensitivity & Breakeven Model (Interview-Grade Base-Rate Architecture):</strong>
+        Because Olist's repeat purchase rate is structurally <strong>3.12% (96.88% one-time buyers)</strong>, an ROI model anchored solely on repeat-order LTV would fail technical scrutiny. This simulator models all <strong>4 commercial levers</strong> simultaneously:
+        <strong>(A) 1–2★ Review Deterrence & Conversion Protection</strong>,
+        <strong>(B) CS Ticket & Apology Voucher Cost Savings</strong>,
+        <strong>(C) Base-Rate Adjusted First-Order Repeat Lift (+0.77pp: 3.40% vs 2.63%)</strong>, and
+        <strong>(D) Churned Seller Take-Rate Exposure (Downside Risk net of Buyer Substitution)</strong>.
     </div>
     """, unsafe_allow_html=True)
 
@@ -720,73 +777,92 @@ elif page == "4. SLA Policy & Commercial ROI Simulator":
     with sim_col1:
         st.markdown('<div class="chart-box">', unsafe_allow_html=True)
         st.markdown('<div class="assertion-title">⚙️ Policy Levers & Unit Economics</div>', unsafe_allow_html=True)
-        st.markdown('<div class="assertion-subtitle">Configure SLA intervention thresholds & marketplace economics</div>', unsafe_allow_html=True)
+        st.markdown('<div class="assertion-subtitle">Adjust enforcement cutoffs & sensitivity assumptions</div>', unsafe_allow_html=True)
 
         cutoff_late_pct = st.slider(
             "1. Seller Late-Rate Enforcement Cutoff (%):",
             min_value=6.0, max_value=25.0, value=10.0, step=0.5,
-            help="Sellers above this late-delivery rate are placed on mandatory 3PL fulfillment or search throttling."
+            help="Active sellers above this late rate face mandatory 3PL onboarding or 50% search rank demotion."
         )
         rehab_rate_pct = st.slider(
             "2. Flagged Seller Rehabilitation Rate (%):",
             min_value=30, max_value=95, value=75, step=5,
-            help="Share of flagged sellers who adopt platform 3PL / fix dispatch SLAs vs. churning off the platform."
+            help="Share of flagged sellers who cure dispatch delays via 3PL vs. churning off the marketplace."
+        )
+        buyer_sub_rate_pct = st.slider(
+            "3. Buyer SKU Substitution Rate (%):",
+            min_value=20, max_value=90, value=60, step=5,
+            help="When a non-compliant seller churns, what % of their buyer demand shifts to compliant sellers on Olist?"
         )
         edd_buffer_reduction_pct = st.slider(
-            "3. Dynamic EDD Buffer Late-Order Reduction (%):",
+            "4. Dynamic EDD Buffer Delay Reduction (%):",
             min_value=0, max_value=50, value=25, step=5,
-            help="Share of long-tail transit delays prevented by adding +3 to +5 day EDD buffers on Northern/Northeastern routes."
+            help="Share of residual carrier delays eliminated by +3 to +5d EDD buffers on Northern corridors."
         )
         voucher_cost_usd = st.slider(
-            "4. Support & Apology Cost per Severe Delay ($):",
+            "5. CS Ticket + Apology Cost / Late Order ($):",
             min_value=5.0, max_value=30.0, value=15.0, step=2.5,
-            help="Average cost of customer service contact + retention voucher per severely delayed order."
+            help="Average WISMO customer support handling + retention voucher cost per severe delay."
         )
         take_rate_pct = st.slider(
-            "5. Marketplace Commission Take-Rate (%):",
+            "6. Marketplace Commission Take-Rate (%):",
             min_value=8.0, max_value=20.0, value=12.0, step=1.0,
-            help="Platform net revenue share of GMV."
+            help="Platform net commission revenue as a % of GMV."
         )
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Empirical calculations from validated CSVs
+    # Helper function to compute multi-lever P&L for any (rehab_pct, sub_pct) pair
+    base_delivered_orders = 96470
+    base_late_orders = 6534
+    base_ontime_pct = 93.23
+    avg_order_aov = 136.68
+    avg_item_gmv = 13591643.70 / 112650  # $120.65
+
     flagged_sellers = df_sellers[df_sellers["seller_late_rate_pct"] >= cutoff_late_pct]
     num_flagged_sellers = len(flagged_sellers)
     flagged_items_total = int(flagged_sellers["total_items"].sum())
     flagged_late_items = int(flagged_sellers["late_items"].sum())
 
-    # Baseline marketplace metrics
-    base_delivered_orders = 96470
-    base_late_orders = 6534
-    base_ontime_pct = 93.23
-    avg_item_gmv = 13591643.70 / 112650  # ~$120.65 per item
+    def compute_scenario(rehab_p, sub_p):
+        late_from_sellers = int(flagged_late_items * (rehab_p / 100.0) * 0.75)
+        rem_late = max(0, base_late_orders - late_from_sellers)
+        late_from_edd = int(rem_late * (edd_buffer_reduction_pct / 100.0))
+        tot_prevented = min(base_late_orders, late_from_sellers + late_from_edd)
+        new_ontime = ((base_delivered_orders - (base_late_orders - tot_prevented)) / base_delivered_orders) * 100.0
 
-    # Impact of Seller SLA Gating + Dynamic EDD calibration
-    late_eliminated_from_sellers = int(flagged_late_items * (rehab_rate_pct / 100.0) * 0.75)
-    remaining_late_pool = max(0, base_late_orders - late_eliminated_from_sellers)
-    late_eliminated_from_edd = int(remaining_late_pool * (edd_buffer_reduction_pct / 100.0))
-    total_late_orders_prevented = min(base_late_orders, late_eliminated_from_sellers + late_eliminated_from_edd)
+        # Excess 1-2 star review rate on late orders is 53.3% (62.6% late vs 9.27% on-time)
+        neg_reviews_avoided = int(tot_prevented * 0.533)
 
-    projected_ontime_pct = ((base_delivered_orders - (base_late_orders - total_late_orders_prevented)) / base_delivered_orders) * 100.0
+        # Lever A: Conversion protection from deterring 1-2 star reviews (~0.85 incremental orders protected per deterred 1-2★ review)
+        lever_a_gmv = neg_reviews_avoided * 0.85 * avg_order_aov
+        lever_a_margin = lever_a_gmv * (take_rate_pct / 100.0)
 
-    # 1-2 Star Reviews Deterred (Late orders average 62.6% 1-2 star rate vs 9.27% on-time = 53.3% excess negative review rate)
-    negative_reviews_prevented = int(total_late_orders_prevented * 0.533)
+        # Lever B: Direct CS Ticket & Proactive Voucher Leakage Saved
+        lever_b_savings = tot_prevented * voucher_cost_usd
 
-    # Financial Sensitivity Calculations
-    # 1. Saved CS / Apology Voucher & Escalation Leakage
-    saved_support_and_voucher_usd = total_late_orders_prevented * voucher_cost_usd
+        # Lever C: Base-Rate Adjusted First-Order Repeat Lift (+0.77 percentage points: 3.40% on-time vs 2.63% 4-7d late)
+        lever_c_gmv = tot_prevented * 0.0077 * avg_order_aov
+        lever_c_margin = lever_c_gmv * (take_rate_pct / 100.0)
 
-    # 2. Protected Listing Conversion & Repeat GMV (Take-Rate Margin)
-    # Preventing 1-2 star reviews protects product page conversion (~0.8 incremental orders per prevented 1-star review + 0.77pp repeat lift)
-    protected_gmv_usd = (negative_reviews_prevented * 0.85 * 136.68) + (total_late_orders_prevented * 0.0077 * 136.68)
-    protected_commission_usd = protected_gmv_usd * (take_rate_pct / 100.0)
+        # Lever D: Churned Seller Take-Rate Exposure (Net of Buyer Substitution to Compliant Sellers)
+        churned_items = flagged_items_total * ((100.0 - rehab_p) / 100.0)
+        unsubstituted_gmv_lost = churned_items * avg_item_gmv * ((100.0 - sub_p) / 100.0)
+        lever_d_risk = unsubstituted_gmv_lost * (take_rate_pct / 100.0)
 
-    # 3. Churned Seller GMV Risk (Unhappy flagged sellers who leave platform instead of rehabilitating, net of 60% buyer substitution to compliant sellers)
-    unrehabilitated_items = flagged_items_total * ((100.0 - rehab_rate_pct) / 100.0)
-    net_lost_gmv_after_substitution = unrehabilitated_items * avg_item_gmv * 0.40
-    forfeited_commission_usd = net_lost_gmv_after_substitution * (take_rate_pct / 100.0)
+        net_pnl = lever_a_margin + lever_b_savings + lever_c_margin - lever_d_risk
+        return {
+            "tot_prevented": tot_prevented,
+            "new_ontime": new_ontime,
+            "neg_reviews_avoided": neg_reviews_avoided,
+            "lever_a_margin": lever_a_margin,
+            "lever_b_savings": lever_b_savings,
+            "lever_c_margin": lever_c_margin,
+            "lever_d_risk": lever_d_risk,
+            "net_pnl": net_pnl,
+            "unsubstituted_gmv_lost": unsubstituted_gmv_lost
+        }
 
-    net_commercial_impact_usd = saved_support_and_voucher_usd + protected_commission_usd - forfeited_commission_usd
+    res = compute_scenario(rehab_rate_pct, buyer_sub_rate_pct)
 
     with sim_col2:
         k1, k2, k3, k4 = st.columns(4)
@@ -802,67 +878,146 @@ elif page == "4. SLA Policy & Commercial ROI Simulator":
             st.markdown(f"""
             <div class="kpi-card compliant">
                 <div class="kpi-title">Projected On-Time SLA</div>
-                <div class="kpi-value">{projected_ontime_pct:.2f}%</div>
-                <div class="kpi-sub"><span class="delta-pos">+{projected_ontime_pct - base_ontime_pct:.2f}% Lift</span></div>
+                <div class="kpi-value">{res['new_ontime']:.2f}%</div>
+                <div class="kpi-sub"><span class="delta-pos">+{res['new_ontime'] - base_ontime_pct:.2f}% Lift</span></div>
             </div>
             """, unsafe_allow_html=True)
         with k3:
             st.markdown(f"""
             <div class="kpi-card compliant">
-                <div class="kpi-title">1–2★ Reviews Prevented</div>
-                <div class="kpi-value">{negative_reviews_prevented:,}</div>
-                <div class="kpi-sub"><span class="delta-pos">{total_late_orders_prevented:,} Delays Avoided</span></div>
+                <div class="kpi-title">1–2★ Reviews Deterred</div>
+                <div class="kpi-value">{res['neg_reviews_avoided']:,}</div>
+                <div class="kpi-sub"><span class="delta-pos">{res['tot_prevented']:,} Delays Avoided</span></div>
             </div>
             """, unsafe_allow_html=True)
         with k4:
-            net_cls = "compliant" if net_commercial_impact_usd >= 0 else "breach"
-            net_badge = "delta-pos" if net_commercial_impact_usd >= 0 else "delta-neg"
+            net_cls = "compliant" if res["net_pnl"] >= 0 else "breach"
+            net_badge = "delta-pos" if res["net_pnl"] >= 0 else "delta-neg"
             st.markdown(f"""
             <div class="kpi-card {net_cls}">
-                <div class="kpi-title">Net Commercial Impact</div>
-                <div class="kpi-value">${net_commercial_impact_usd:,.0f}</div>
-                <div class="kpi-sub"><span class="{net_badge}">Annualized P&L Delta</span></div>
+                <div class="kpi-title">Net Platform P&L Impact</div>
+                <div class="kpi-value">${res['net_pnl']:,.0f}</div>
+                <div class="kpi-sub"><span class="{net_badge}">Multi-Lever Net Benefit</span></div>
             </div>
             """, unsafe_allow_html=True)
 
         st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-        st.markdown('<div class="chart-box">', unsafe_allow_html=True)
-        st.markdown('<div class="assertion-title">Commercial P&L Sensitivity Bridge: Benefits of Defect Reduction vs. Seller Churn Risk</div>', unsafe_allow_html=True)
-        st.markdown('<div class="assertion-subtitle">Simulated Platform Contribution Margin Impact ($ USD) Under Selected SLA Governance Policy</div>', unsafe_allow_html=True)
+        # Sub-tabs inside Simulator for Waterfall Bridge vs 2D Breakeven Matrix
+        sim_tab1, sim_tab2 = st.tabs([
+            "📊 4-Lever Commercial P&L Waterfall Bridge",
+            "🔥 2D Breakeven Sensitivity Matrix (Rehab % × Substitution %)"
+        ])
 
-        fig_wf = go.Figure(go.Waterfall(
-            name="P&L Bridge",
-            orientation="v",
-            measure=["relative", "relative", "relative", "total"],
-            x=[
-                "1. Saved Support & Voucher Leakage",
-                "2. Protected Conversion & Repeat Commission",
-                "3. Forfeited Take-Rate (Seller Churn Risk)",
-                "Net Platform P&L Impact"
-            ],
-            textposition="outside",
-            text=[
-                f"+${saved_support_and_voucher_usd:,.0f}",
-                f"+${protected_commission_usd:,.0f}",
-                f"-${forfeited_commission_usd:,.0f}",
-                f"${net_commercial_impact_usd:,.0f}"
-            ],
-            y=[
-                saved_support_and_voucher_usd,
-                protected_commission_usd,
-                -forfeited_commission_usd,
-                net_commercial_impact_usd
-            ],
-            connector={"line": {"color": "#94a3b8"}},
-            increasing={"marker": {"color": "#059669"}},
-            decreasing={"marker": {"color": "#dc2626"}},
-            totals={"marker": {"color": "#2563eb"}}
-        ))
-        fig_wf.update_layout(yaxis=dict(title="Platform Financial Impact ($ USD)", tickprefix="$"))
-        apply_enterprise_layout(fig_wf, height=360, show_legend=False)
-        st.plotly_chart(fig_wf, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        with sim_tab1:
+            st.markdown('<div class="chart-box">', unsafe_allow_html=True)
+            st.markdown('<div class="assertion-title">Multi-Lever P&L Bridge: CS & Review Conversion Gains vs. Base-Rate Repeat Lift & Seller Churn Risk</div>', unsafe_allow_html=True)
+            st.markdown('<div class="assertion-subtitle">Contribution Margin Impact ($ USD) Across All 4 Operational Levers</div>', unsafe_allow_html=True)
+
+            fig_wf = go.Figure(go.Waterfall(
+                name="P&L Bridge",
+                orientation="v",
+                measure=["relative", "relative", "relative", "relative", "total"],
+                x=[
+                    "Lever A: 1–2★ Deterrence (Conversion)",
+                    "Lever B: Saved CS & Voucher Leakage",
+                    "Lever C: Repeat Lift (+0.77pp Base-Adjusted)",
+                    "Lever D: Churned Seller Take-Rate Risk",
+                    "Net Platform P&L Impact"
+                ],
+                textposition="outside",
+                text=[
+                    f"+${res['lever_a_margin']:,.0f}",
+                    f"+${res['lever_b_savings']:,.0f}",
+                    f"+${res['lever_c_margin']:,.0f}",
+                    f"-${res['lever_d_risk']:,.0f}",
+                    f"${res['net_pnl']:,.0f}"
+                ],
+                y=[
+                    res["lever_a_margin"],
+                    res["lever_b_savings"],
+                    res["lever_c_margin"],
+                    -res["lever_d_risk"],
+                    res["net_pnl"]
+                ],
+                connector={"line": {"color": "#94a3b8"}},
+                increasing={"marker": {"color": "#059669"}},
+                decreasing={"marker": {"color": "#dc2626"}},
+                totals={"marker": {"color": "#2563eb"}}
+            ))
+            fig_wf.update_layout(yaxis=dict(title="Platform Financial Impact ($ USD)", tickprefix="$"))
+            apply_enterprise_layout(fig_wf, height=340, show_legend=False)
+            st.plotly_chart(fig_wf, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with sim_tab2:
+            st.markdown('<div class="chart-box">', unsafe_allow_html=True)
+            st.markdown('<div class="assertion-title">Breakeven Sensitivity Matrix: Net Platform P&L ($K) Across Rehabilitation & Substitution Rates</div>', unsafe_allow_html=True)
+            st.markdown('<div class="assertion-subtitle">Green cells indicate net-positive policy ROI even under partial seller churn</div>', unsafe_allow_html=True)
+
+            rehab_grid = [40, 50, 60, 70, 80, 90]
+            sub_grid = [30, 40, 50, 60, 70, 80]
+            z_matrix = []
+            text_matrix = []
+            for r_val in rehab_grid:
+                row_z = []
+                row_t = []
+                for s_val in sub_grid:
+                    val_k = compute_scenario(r_val, s_val)["net_pnl"] / 1000.0
+                    row_z.append(val_k)
+                    row_t.append(f"${val_k:+.1f}K")
+                z_matrix.append(row_z)
+                text_matrix.append(row_t)
+
+            fig_heat = go.Figure(data=go.Heatmap(
+                z=z_matrix,
+                x=[f"{s}% Sub." for s in sub_grid],
+                y=[f"{r}% Rehab." for r in rehab_grid],
+                text=text_matrix,
+                texttemplate="%{text}",
+                colorscale="RdYlGn",
+                zmid=0,
+                colorbar=dict(title="Net P&L ($K)")
+            ))
+            fig_heat.update_layout(
+                xaxis_title="Buyer Substitution Rate to Compliant Sellers (%)",
+                yaxis_title="Flagged Seller 3PL Rehabilitation Rate (%)"
+            )
+            apply_enterprise_layout(fig_heat, height=340, show_legend=False)
+            st.plotly_chart(fig_heat, use_container_width=True)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    # Bottom Full-Width Table: Mathematical Audit of the 4 Levers
+    st.markdown('<div class="chart-box">', unsafe_allow_html=True)
+    st.markdown('<div class="assertion-title">📐 Transparent Unit Economics & Base-Rate Audit Table</div>', unsafe_allow_html=True)
+    audit_df = pd.DataFrame([
+        {
+            "Economic Lever": "Lever A: 1–2★ Review Deterrence (Conversion Protection)",
+            "Empirical Base Rate / SQL Input": "Late orders have 62.6% 1–2★ rate vs 9.27% on-time (+53.3pp excess negative reviews)",
+            "Simulated Volume": f"{res['neg_reviews_avoided']:,} negative 1–2★ reviews prevented",
+            "P&L Impact ($ USD)": f"+${res['lever_a_margin']:,.2f}"
+        },
+        {
+            "Economic Lever": "Lever B: CS WISMO Ticket & Apology Voucher Savings",
+            "Empirical Base Rate / SQL Input": f"${voucher_cost_usd:.2f} average support + retention voucher cost per avoided late order",
+            "Simulated Volume": f"{res['tot_prevented']:,} late orders prevented",
+            "P&L Impact ($ USD)": f"+${res['lever_b_savings']:,.2f}"
+        },
+        {
+            "Economic Lever": "Lever C: First-Order Repeat Lift (Base-Rate Adjusted)",
+            "Empirical Base Rate / SQL Input": "3.12% structural repeat base; +0.77pp lift (3.40% on-time vs 2.63% 4–7d late)",
+            "Simulated Volume": f"~{int(res['tot_prevented'] * 0.0077):,} incremental repeat orders",
+            "P&L Impact ($ USD)": f"+${res['lever_c_margin']:,.2f}"
+        },
+        {
+            "Economic Lever": "Lever D: Churned Seller Commission Exposure (Downside Risk)",
+            "Empirical Base Rate / SQL Input": f"{100 - rehab_rate_pct}% seller churn × {100 - buyer_sub_rate_pct}% un-substituted GMV (${res['unsubstituted_gmv_lost']:,.0f})",
+            "Simulated Volume": f"{num_flagged_sellers} flagged sellers ({flagged_items_total:,} total items)",
+            "P&L Impact ($ USD)": f"-${res['lever_d_risk']:,.2f}"
+        },
+    ])
+    st.dataframe(audit_df, use_container_width=True, hide_index=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # =============================================================================
 # VIEW 5: BA GOVERNANCE (BRD/RACI) & SQL-TO-DAX RECONCILIATION
@@ -873,7 +1028,7 @@ elif page == "5. BA Governance (BRD/RACI) & Reconciliation":
     with tab_brd:
         st.markdown('<div class="chart-box">', unsafe_allow_html=True)
         st.markdown('<div class="assertion-title">Business Requirements Document (BRD) Summary: Automated Seller SLA Governance</div>', unsafe_allow_html=True)
-        st.markdown('<div class="assertion-subtitle">Bridging BI Insights to CRM/ERP Execution (HubSpot / Jira / Logistics Ops)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="assertion-subtitle">Bridging BI Insights to CRM/ERP Execution (HubSpot / Jira / Logistics Ops) — Full Spec in docs/brd_seller_sla_governance.md</div>', unsafe_allow_html=True)
 
         g1, g2 = st.columns([6, 6])
         with g1:
